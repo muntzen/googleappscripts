@@ -4,20 +4,37 @@
  * attendee. If you are, it'll email you to let you know you might want to delete it. Configurable
  * with global horrible things at the moment, while I'm hackering.
  *
+ * USAGE:
+ *   1) View all of the CONFIG options below and change them as needed
+ *   2) Select Resources->Current Project's Triggers and setup an hourly trigger that runs the hourly() function and a daily trigger that runs the daily() function.
+ *   3) Enjoy.
  */
 
-
-
-/**
- * Global horrible things
- */
-var timeAhead = 3600;// an hour in advance
+// CONFIG: If you want this to run against a different Calendar, select it here 
+// (see: https://developers.google.com/apps-script/reference/calendar/calendar-app#getcalendarsbynamename)
 var calendar = CalendarApp.getDefaultCalendar();
 
+// CONFIG: If you want to send this to someone other than yourself, define them here (comma separated for multiples)
+var toEmail = Session.getActiveUser().getEmail();
+
 /**
- * Main entry point
+ * entry point for an hourly trigger
  */
-function nukeSoloEvents() {
+function hourly() {
+  nukeSoloEvents(3600);
+}
+
+/**
+ * entry point for a daily trigger
+ */
+function daily() {
+  nukeSoloEvents(86200);
+}
+
+/**
+ * Nuke solo events that are secondsAhead 
+ */
+function nukeSoloEvents(timeAhead) {
   var startTime = new Date();
   var endTime = new Date((new Date()).getTime() + (timeAhead*1000));
   var events = calendar.getEvents(startTime, endTime);
@@ -66,8 +83,8 @@ function notifyOfEmpty(event) {
   var dateStr = Utilities.formatDate(event.getStartTime(), Session.getScriptTimeZone(), "EEEE, MMM d");
   var hourStr = Utilities.formatDate(event.getStartTime(), Session.getScriptTimeZone(), "HH:mm a");
   var timeStr = dateStr + " at " + hourStr;
-  MailApp.sendEmail(Session.getActiveUser().getEmail(), 
+  MailApp.sendEmail(toEmail, 
                     "Meeting potentially empty", 
-                    "Hey, your meeting '" + event.getTitle() + "' on " + timeStr + " might be empty. You can view it and cancel it here: "+ eventURL);
+                    "On the calendar for " +  + Session.getActiveUser().getEmail() + ", the meeting '" + event.getTitle() + "' on " + timeStr + " might be empty. You can view it and cancel it here: "+ eventURL);
   Logger.log('Event: ' + event.getTitle() + ' on ' + timeStr + ' looks solo');
 }
